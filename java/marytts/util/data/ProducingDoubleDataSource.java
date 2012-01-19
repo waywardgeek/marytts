@@ -59,6 +59,7 @@ public abstract class ProducingDoubleDataSource extends BufferedDoubleDataSource
 
     public void start() {
         dataProducingThread = new Thread(this);
+        dataProducingThread.setName("producer");
         dataProducingThread.start();
     }
 
@@ -70,7 +71,7 @@ public abstract class ProducingDoubleDataSource extends BufferedDoubleDataSource
     public abstract void run();
     
     /**
-     * The producing thread tries to put ont data item into the queue.
+     * The producing thread tries to put one data item into the queue.
      * @param value
      */
     public void putOneDataPoint(double value) {
