@@ -483,7 +483,8 @@ public class HTSVocoder {
       
       magSample = 1;
       magPulseSize = 0;
-      for(mcepframe=0,lf0frame=0; mcepframe<mcepPst.getT(); mcepframe++) {
+      boolean quitting = false;
+      for(mcepframe=0,lf0frame=0; mcepframe<mcepPst.getT() && !quitting; mcepframe++) {
        
         /* get current feature vector mcp */ 
         for(i=0; i<m; i++)
@@ -698,7 +699,7 @@ public class HTSVocoder {
           
           audio_double[s_double] = x;
           if(audioProducer != null) {
-              audioProducer.putOneDataPoint(x);
+              quitting = !audioProducer.putOneDataPoint(x);
           }
 
           s_double++;

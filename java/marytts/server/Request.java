@@ -209,6 +209,11 @@ public class Request {
     public void abort() {
         logger.info("Requesting abort.");
         abortRequested = true;
+        try {
+            appendableAudioStream.close();
+        } catch (IOException e) {
+            logger.warn("Problem closing audio streams", e);
+        }
     }
     
     /**

@@ -36,6 +36,7 @@ public abstract class ProducingDoubleDataSource extends BufferedDoubleDataSource
     private Thread dataProducingThread = null;
     private boolean hasSentEndOfStream = false;
     private boolean hasReceivedEndOfStream = false;
+    private boolean quitting = false;
 
 
     
@@ -67,6 +68,7 @@ public abstract class ProducingDoubleDataSource extends BufferedDoubleDataSource
      * Subclasses must implement this method such that it produces data and sends it through
      * {@link #putOneDataPoint(double)}.
      * When all data is sent, the subclass must call {@link #putEndOfStream()} exactly once.
+     * Also, the run method needs to end when it detects quitting is true.
      */
     public abstract void run();
     
@@ -74,12 +76,13 @@ public abstract class ProducingDoubleDataSource extends BufferedDoubleDataSource
      * The producing thread tries to put one data item into the queue.
      * @param value
      */
-    public void putOneDataPoint(double value) {
+    public boolean putOneDataPoint(double value) {
         try {
             queue.put(value);
         } catch (InterruptedException e) {
             throw new RuntimeException("Unexpected interruption", e);
         }
+        return !quitting;
     }
     
     
@@ -92,7 +95,7 @@ public abstract class ProducingDoubleDataSource extends BufferedDoubleDataSource
     @Override
     public boolean hasMoreData() {
         checkStarted();
-        return !isAllProductionDataRead() || available() > 0; 
+        return (!isAllProductionDataRead() || available() > 0) && !quitting; 
     }
     
     @Override
@@ -130,7 +133,7 @@ public abstract class ProducingDoubleDataSource extends BufferedDoubleDataSource
         }
         // Now we have a buffer that can hold at least minLength new data points
         int readSum = 0;
-        while (readSum < minLength) {
+        while (readSum < minLength && !quitting) {
             double data = getOneDataPoint();
             if (data == END_OF_STREAM) {
                 hasReceivedEndOfStream = true;
@@ -143,7 +146,7 @@ public abstract class ProducingDoubleDataSource extends BufferedDoubleDataSource
         if (dataProcessor != null) {
             dataProcessor.applyInline(buf, writePos-readSum, readSum);
         }
-        return readSum == minLength;
+        return readSum == minLength && !quitting;
     }
 
     /**
@@ -175,4 +178,11 @@ public abstract class ProducingDoubleDataSource extends BufferedDoubleDataSource
     private boolean isAllProductionDataRead() {
         return hasReceivedEndOfStream;
     }
+
+    public void close()
+    {
+        quitting = true;
+        queue.clear(); // Just in case the producer thread is blocking on queue.put
+    }
+    
 }
