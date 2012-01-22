@@ -80,14 +80,17 @@ public abstract class ProducingDoubleDataSource extends BufferedDoubleDataSource
         try {
             queue.put(value);
         } catch (InterruptedException e) {
-            throw new RuntimeException("Unexpected interruption", e);
+            // This can happen if the user cancels.
+            quitting = true;
         }
         return !quitting;
     }
     
     
-    protected void putEndOfStream() {
-        putOneDataPoint(END_OF_STREAM);
+    protected synchronized void putEndOfStream() {
+        if (!hasSentEndOfStream && !quitting) {
+            putOneDataPoint(END_OF_STREAM);
+        }
         hasSentEndOfStream  = true;
     }
     
@@ -182,7 +185,7 @@ public abstract class ProducingDoubleDataSource extends BufferedDoubleDataSource
     public void close()
     {
         quitting = true;
-        queue.clear(); // Just in case the producer thread is blocking on queue.put
+        dataProducingThread.interrupt(); // In case it's stuck in queue.put()
     }
     
 }

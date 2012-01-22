@@ -586,7 +586,7 @@ public class HTSVocoder {
         /* Generate fperiod samples per feature vector, normally 80 samples per frame */
         //p1=0.0;
         gauss=false;
-        for(j=fprd-1, i=(iprd+1)/2; j>=0; j--) {          
+        for(j=fprd-1, i=(iprd+1)/2; j>=0 && !quitting; j--) {          
           if(p1 == 0.0) {
             if(gauss)
               x = rand.nextGaussian();  /* returns double, gaussian distribution mean=0.0 and var=1.0 */

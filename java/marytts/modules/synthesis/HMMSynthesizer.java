@@ -243,7 +243,8 @@ public class HMMSynthesizer implements WaveformSynthesizer {
                  // here i pass segements and boundaries to update the realised acoustparams, dur and f0
                  MaryData audio = htsEngine.process(in, targetFeaturesList, segmentsAndBoundaries, null);     
                       
-                 assert audio.getAudio() != null;           
+                 assert audio.getAudio() != null;
+                 audio.getAudio().close();
 
              } else {
                  logger.debug("No example text -- no power-on self test!");
