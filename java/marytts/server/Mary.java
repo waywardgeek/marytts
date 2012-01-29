@@ -507,7 +507,7 @@ public class Mary {
         else System.err.print("command-line application...");
         
         // first thing we do, let's test if the port is available:
-        if (!server.equals("commandline")) {
+        if (!server.equals("commandline") && !server.equals("stdio")) {
             int localPort = MaryProperties.needInteger("socket.port");
             try {
                 ServerSocket serverSocket = new ServerSocket(localPort);
