@@ -20,6 +20,7 @@
 package marytts.datatypes;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -29,6 +30,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -43,6 +45,7 @@ import javax.xml.transform.TransformerException;
 import marytts.modules.synthesis.Voice;
 import marytts.server.MaryProperties;
 import marytts.util.MaryUtils;
+import marytts.util.data.ProducingDoubleDataSource;
 import marytts.util.data.audio.AppendableSequenceAudioInputStream;
 import marytts.util.data.audio.SequenceAudioInputStream;
 import marytts.util.dom.DomUtils;
@@ -265,8 +268,35 @@ public class MaryData
         } else if (type.isTextType()) { // caution: XML types are text types!
             writeTo(new OutputStreamWriter(os, "UTF-8"));
         } else { // audio
-        	logger.debug("Writing audio output, frame length "+audio.getFrameLength());
-            AudioSystem.write(audio, audioFileFormat.getType(), os);
+        	long length = audio.getFrameLength();
+        	AudioFileFormat.Type type = audioFileFormat.getType();
+        	if (length == -1 && type.equals(AudioFileFormat.Type.WAVE)) {
+        		// We have to generate all the data before we can write a WAVE file.
+        		int bufLen = 1024;
+        		byte[] buffer = new byte[bufLen];
+        		int dataSize = bufLen << 16;
+        		int dataPos = 0;
+        		byte[] data = new byte[dataSize];
+        		int numRead;
+        		do {
+        		    numRead = audio.read(buffer);
+        		    if (numRead > 0) {
+	        		    if (dataPos + numRead >= dataSize) {
+	                        dataSize += dataSize >> 1;
+	        		    	byte[] newData = new byte[dataSize];
+	        		        System.arraycopy(data, 0, newData, 0, dataPos);
+	        		        data = newData;
+	        		    }
+	        		    System.arraycopy(buffer, 0, data, dataPos, numRead);
+	        		    dataPos += numRead;
+        		    }
+        		} while(numRead == bufLen);
+        		audio.close();
+                ByteArrayInputStream byteInStream = new ByteArrayInputStream(data);
+                audio = new AudioInputStream(byteInStream, audio.getFormat(), data.length >> 1); 
+            }
+        	logger.debug("Writing audio output, frame length "+length);
+            AudioSystem.write(audio, type, os);
             os.flush();
             os.close();
         }
