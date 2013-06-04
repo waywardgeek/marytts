@@ -274,7 +274,7 @@ public class MaryData
         		// We have to generate all the data before we can write a WAVE file.
         		int bufLen = 1024;
         		byte[] buffer = new byte[bufLen];
-        		int dataSize = bufLen << 16;
+        		int dataSize = bufLen * 16;
         		int dataPos = 0;
         		byte[] data = new byte[dataSize];
         		int numRead;
@@ -292,6 +292,9 @@ public class MaryData
         		    }
         		} while(numRead == bufLen);
         		audio.close();
+        		byte[] newData = new byte[dataPos];
+        		System.arraycopy(data,  0,  newData,  0,  dataPos);
+        		data = newData;
                 ByteArrayInputStream byteInStream = new ByteArrayInputStream(data);
                 audio = new AudioInputStream(byteInStream, audio.getFormat(), data.length >> 1); 
             }

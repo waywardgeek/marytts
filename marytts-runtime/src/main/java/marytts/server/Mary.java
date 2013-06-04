@@ -23,6 +23,7 @@ package marytts.server;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -519,10 +520,15 @@ public class Mary {
         		public void run() {
         			try {
                         InputStream inputStream;
-                        if (args.length == 0 || args[0].equals("-"))
+                        OutputStream outputStream;
+                        
+                        if (args.length == 0 || args[0].equals("-")) {
                             inputStream = System.in;
-                        else
+                            outputStream = System.out;
+                        } else {
                             inputStream = new FileInputStream(args[0]);
+                            outputStream = new FileOutputStream(args[1]);
+                        }
                         String input = FileUtils.getStreamAsString(inputStream, "UTF-8");
                         process(input,
                                 MaryProperties.getProperty("input.type", "TEXT"),
@@ -534,7 +540,7 @@ public class Mary {
                                 MaryProperties.getProperty("style", null),
                                 MaryProperties.getProperty("effect", null),
                                 MaryProperties.getProperty("output.type.params", null),
-                                System.out);
+                                outputStream);
         			} catch (Exception e) {
         				throw new RuntimeException(e);
         			}
